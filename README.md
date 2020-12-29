@@ -16,7 +16,7 @@ The aim of this task is to extract texts of a number of key fields from given re
 Evaluation Protocol:<br>
 For each test receipt image, the extracted text is compared to the ground truth. An extract text is marked as correct if both submitted content and category of the extracted text matches the groundtruth; Otherwise, marked as incorrect. The precision is computed over all the extracted texts of all the test receipt images. F1 score is computed based on precision and recall. F1 score will be used for ranking.<br>
 
- ## Data:
+ ## Data
 The dataset will have 1000 whole scanned receipt images. Each receipt image contains around about four key text fields, such as goods name, unit price and total cost, etc. The text annotated in the dataset mainly consists of digits and English characters.<br>
 For receipt OCR task, each image in the dataset is annotated with text bounding boxes (bbox) and the transcript of each text bbox. Locations are annotated as rectangles with four vertices, which are in clockwise order starting from the top. Annotations for an image are stored in a text file with the same file name. The annotation format is similar to that of ICDAR2015 dataset, which is shown below:
 
@@ -32,7 +32,7 @@ For the information extraction task, each image in the dataset is annotated with
 
 {<br>"company": "STARBUCKS STORE #10208",<br>"date": "14/03/2015",<br>"address": "11302 EUCLID AVENUE, CLEVELAND, OH (216) 229-0749",<br>"total": "4.95",<br>}
 
-## Technologies Used:
+## Technologies Used
 - **Python**
 - **Spacy**
 - **Pandas**
