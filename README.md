@@ -47,7 +47,10 @@ Evaluation metric used to measure the model performance is **F1 score**.<br>
 F1 score of the above mentioned Custom NER model on the test data set is **0.78**.<br>
 [Click here](https://rrc.cvc.uab.es/?ch=13&com=evaluation&view=method_info&task=3&m=82331) to visit the ICDAR SROIE 2019 Challenge solutions page for this model. 
 
-
+## References
+- https://spacy.io/usage/linguistic-features#named-entities
+- https://spacy.io/usage/training
+- https://aihub.cloud.google.com/u/0/p/products%2F2290fc65-0041-4c87-a898-0289f59aa8ba
 
 
 
