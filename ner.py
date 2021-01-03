@@ -10,7 +10,7 @@ import spacy
 from spacy.util import minibatch, compounding
 from spacy.matcher import PhraseMatcher
 
-warnings.filter("ignore")
+warnings.filterwarnings("ignore")
 
 
 class NER:
@@ -21,22 +21,25 @@ class NER:
         min_batchsize=4.0,
         max_batchsize=32.0,
         compounding_coef=0.01,
+        train_text_path=None,
+        train_entities_path=None,
+        test_text_path=None,
     ):
         self.iter = iter
         self.dropout = dropout
         self.min_batchsize = min_batchsize
         self.max_batchsize = max_batchsize
         self.compounding_coef = compounding_coef
-        self.train_text_path = None
-        self.train_entities_path = None
-        self.test_text_path = None
+        self.train_text_path = train_text_path
+        self.train_entities_path = train_entities_path
+        self.test_text_path = test_text_path
 
-    def get_data(self):
-        '''
+    def get_data(self, *args, **kwargs):
+        """
         Get data from the text files and transform into a pandas dataframe 
         parameters: None
         returns: dataframe
-        '''
+        """
         set_text = set(os.listdir(self.train_text_path))
         set_ent = set(os.listdir(self.train_entities_path))
         training_set = list(set_text.intersection(set_ent))
@@ -47,7 +50,7 @@ class NER:
         for file in self.data["filename"]:
             rec_text = []
             pattern = r"\d+,\d+,\d+,\d+,\d+,\d+,\d+,\d+,(.+)"
-            with open(os.path.join(self.train_text_path, file) as f:
+            with open(os.path.join(self.train_text_path, file)) as f:
                 f.seek(0)
                 lines = f.readlines()
                 for line in lines:
@@ -63,12 +66,12 @@ class NER:
 
         return self.data
 
-    def transform_data(self, data):
-        '''
+    def transform_data(self, data, *args, **kwargs):
+        """
         Transform pandas dataframe to the spaCy compliant training data format 
         parameters: DataFrame
         returns: List of text and entity tuples
-        '''
+        """
         training_data = []
         id_ent = []
         nlp_match = spacy.load("en_core_web_sm")
@@ -159,12 +162,14 @@ class NER:
 
         return training_data
 
-    def fit(self):
-        '''
+    def fit(self, train_text_path, train_entities_path, *args, **kwargs):
+        """
         Fit a blank English language model from spaCy and save the model in the current directory 
         parameters: None
         returns: None
-        '''
+        """
+        self.train_text_path = train_text_path
+        self.train_entities_path = train_entities_path
         data = self.get_data(self)
         training_data = self.transform_data(self, data)
         TRAIN_DATA = training_data
@@ -206,11 +211,11 @@ class NER:
             output_dir.mkdir()
         nlp.to_disk(output_dir)
 
-    def get_test_data(self):
-        '''
+    def get_test_data(self, *args, **kwargs):
+        """
         Fetch the data from the test directory and transform it into a pandas DataFrame
         returns: DataFrame 
-        '''
+        """
         test_text_files = os.listdir(self.test_text_path)
         test_data = pd.DataFrame(columns=["filename", "text"])
         test_data["filename"] = test_text_files
@@ -219,20 +224,20 @@ class NER:
             rec_text = []
             pattern = r"\d+,\d+,\d+,\d+,\d+,\d+,\d+,\d+,(.+)"
             try:
-            with open(os.path.join(self.test_text_path, file)) as f:
-                lines = f.readlines()
-                for line in lines:
-                    rec_text += re.findall(pattern, line)
+                with open(os.path.join(self.test_text_path, file)) as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        rec_text += re.findall(pattern, line)
             except:
-            pass
+                pass
             data_text.append(" ".join([x.strip() for x in rec_text]))
         test_data["text"] = data_text
-        return test_data        
-    
-    def predict(self, test_text_path, reciept_text, is_dir=True):
-        '''
+        return test_data
+
+    def predict(self, test_text_path, reciept_text="", is_dir=True, *args, **kwargs):
+        """
         Identify entities in a new text string
-        '''
+        """
         cwd = os.getcwd()
         nlp = spacy.load(os.path.join(cwd, "model"))
         train = os.listdir(self.train_entities_path)
@@ -241,11 +246,11 @@ class NER:
             with open(os.path.join(self.train_entities_path, file)) as f:
                 entity_dict = json.load(f)
                 ent_list.append(entity_dict)
-        memory_dictionary = {"company":[], "address":[], "date":[], "total":[]}
+        memory_dictionary = {"company": [], "address": [], "date": [], "total": []}
         for dictionary in ent_list:
             for key, value in dictionary.items():
                 memory_dictionary[key].append(value)
-        
+
         if is_dir:
             self.test_text_path = test_text_path
             test_data = self.get_test_data(self)
@@ -254,18 +259,23 @@ class NER:
                 doc = nlp(row["text"])
                 for ent in doc.ents:
                     op_dict[ent.label_] = ent.text
-                
+
                 for tag, tag_memory in memory_dictionary.items():
                     for tag_value in tag_memory:
-                        if tag=="total":
-                            pass   
-                        elif (re.search(tag_value, row["text"]) != None) and (op_dict[tag] == ""):
-                            op_dict[tag]=tag_value
-                            
+                        if tag == "total":
+                            pass
+                        elif (re.search(tag_value, row["text"]) != None) and (
+                            op_dict[tag] == ""
+                        ):
+                            op_dict[tag] = tag_value
+
                 print("Entities: ", op_dict)
-                json_object = json.dumps(op_dict, indent = 4)
-                with open(os.path.join(cwd, f"output/{row['filename']}", "w")) as op:
-                    op.write(json_object)            
+                op_dir = os.path.join(cwd, "output")
+                if not os.path.isdir(op_dir):
+                    os.mkdir(path=op_dir)
+                json_object = json.dumps(op_dict, indent=4)
+                with open(os.path.join(op_dir, f"{row['filename']}"), "w") as op:
+                    op.write(json_object)
         else:
             doc = nlp(reciept_text)
             op_dict = {"company": "", "date": "", "address": "", "total": ""}
@@ -273,14 +283,10 @@ class NER:
                 op_dict[ent.label_] = ent.text
             for tag, tag_memory in memory_dictionary.items():
                 for tag_value in tag_memory:
-                    if tag=="total":
+                    if tag == "total":
                         pass
-                    elif (re.search(tag_value, row["text"]) != None) and (op_dict[tag] == ""):
-                        op_dict[tag]=tag_value
+                    elif (re.search(tag_value, row["text"]) != None) and (
+                        op_dict[tag] == ""
+                    ):
+                        op_dict[tag] = tag_value
             print("Entities: ", op_dict)
-
-
-
-
-
-
